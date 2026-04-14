@@ -1,19 +1,10 @@
-<<<<<<< Updated upstream
-=======
 /* ===== БАЗОВЫЕ СТИЛИ ===== */
->>>>>>> Stashed changes
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-<<<<<<< Updated upstream
-html, body, #root {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-=======
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background: #f5f7fa;
@@ -225,7 +216,6 @@ body {
 .leaflet-container {
   width: 100% !important;
   height: 100% !important;
->>>>>>> Stashed changes
 }
 
 /* Попапы на карте */
@@ -274,6 +264,29 @@ body {
   color: #4b5563;
   line-height: 1.4;
   margin: 0;
+}
+
+/* Кнопка админки */
+.admin-toggle-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  transition: transform 0.2s, box-shadow 0.2s;
+  z-index: 1500;
+}
+
+.admin-toggle-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
 }
 
 /* Скроллбар */
