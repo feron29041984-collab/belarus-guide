@@ -1,41 +1,19 @@
-import { useState } from 'react'
-import Map from './components/Map'
-import Sidebar from './components/Sidebar'
-import './index.css'
+import { MapContainer, TileLayer } from 'react-leaflet'
+import 'leaflet/dist/leaflet.css'
 
 function App() {
-  const [selectedAttraction, setSelectedAttraction] = useState(null)
-  const [mapCenter, setMapCenter] = useState(null)
-  
-  // Обработчик выбора из списка
-  const handleAttractionSelect = (spot) => {
-    setSelectedAttraction(spot.id)
-    setMapCenter([spot.latitude, spot.longitude])
-  }
-  
-  // Обработчик клика на маркер
-  const handleMarkerClick = (lat, lng, name) => {
-    setMapCenter([lat, lng])
-    // Можно добавить поиск по имени в sidebar
-  }
-  
   return (
-    <div>
-      <header className="header">
-        <h1>🇾 BelarusGuide</h1>
-        <div style={{ color: '#7f8c8d' }}>
-          Интерактивная карта достопримечательностей
-        </div>
-      </header>
-      
-      <Sidebar 
-        onAttractionSelect={handleAttractionSelect}
-        selectedId={selectedAttraction}
-      />
-      
-      <div className="map-container">
-        <Map onMarkerClick={handleMarkerClick} />
-      </div>
+    <div style={{ width: '100vw', height: '100vh' }}>
+      <MapContainer 
+        center={[53.9, 27.56]} 
+        zoom={7} 
+        style={{ height: '100%', width: '100%' }}
+      >
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; OpenStreetMap'
+        />
+      </MapContainer>
     </div>
   )
 }
