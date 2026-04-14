@@ -1,125 +1,83 @@
 import { useEffect, useState } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
-import L from 'leaflet'
-import { supabase } from '../lib/supabaseClient'
 
-// Исправление иконок Leaflet в React
+// 🛠 ВАЖНО: Исправление иконок маркеров для React/Vite
+// Без этого кода маркеры могут быть невидимыми (белыми квадратами)
+import L from 'leaflet'
 import icon from 'leaflet/dist/images/marker-icon.png'
 import iconShadow from 'leaflet/dist/images/marker-shadow.png'
 
 let DefaultIcon = L.icon({
-  iconUrl: icon,
-  shadowUrl: iconShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34]
+    iconUrl: icon,
+    shadowUrl: iconShadow,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41]
 })
-
 L.Marker.prototype.options.icon = DefaultIcon
 
-// Компонент для обновления центра карты
-function MapUpdater({ center }) {
-  const map = useMap()
-  useEffect(() => {
-    if (center) {
-      map.flyTo(center, 13, { duration: 1.5 })
-    }
-  }, [center, map])
-  return null
-}
+// Импорт вашего клиента Supabase (убедитесь, что путь правильный)
+import { supabase } from '../lib/supabaseClient'
 
-function Map({ onMarkerClick }) {
+function Map() {
   const [attractions, setAttractions] = useState([])
-  const defaultCenter = [53.9, 27.56] // Минск
-  
-  // Загрузка данных из Supabase
+
+  // Загружаем данные при запуске компонента
   useEffect(() => {
-    fetchAttractions()
-  }, [])
-  
-  async function fetchAttractions() {
-    try {
+    async function fetchData() {
+      console.log('Загрузка данных из Supabase...')
+      
       const { data, error } = await supabase
-        .from('attractions')
-        .select('*')
-        .order('name')
+        .from('attractions') // Имя вашей таблицы
+        .select('*')         // Выбираем все колонки
       
       if (error) {
-        console.error('Ошибка загрузки:', error)
-        return
+        console.error('Ошибка при загрузке:', error)
+      } else {
+        console.log('Данные получены:', data)
+        setAttractions(data) // Сохраняем в состояние
       }
-      
-      setAttractions(data || [])
-    } catch (err) {
-      console.error('Ошибка:', err)
     }
-  }
-  
-  // Обработчик клика на маркер
-  const handleMarkerClick = (lat, lng, name) => {
-    if (onMarkerClick) {
-      onMarkerClick({ lat, lng, name })
-    }
-  }
-  
+
+    fetchData()
+  }, [])
+
   return (
-    <>
-      {/* Передаем данные вверх для отображения в sidebar */}
-      {onMarkerClick && attractions.length > 0 && (
-        <div style={{ display: 'none' }}>
-          {attractions.map(spot => (
-            <div key={spot.id} data-id={spot.id} />
-          ))}
-        </div>
-      )}
-      
+    <div style={{ height: '100vh', width: '100%' }}>
       <MapContainer 
-        center={defaultCenter} 
+        center={[53.9045, 27.5615]} // Координаты центра (Минск)
         zoom={7} 
         style={{ height: '100%', width: '100%' }}
-        scrollWheelZoom={true}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; OpenStreetMap contributors'
         />
-        
-        {attractions.map((spot) => (
+
+        {/* 🎈 Рендерим маркеры для каждой достопримечательности */}
+        {attractions.map((place) => (
           <Marker 
-            key={spot.id} 
-            position={[spot.latitude, spot.longitude]}
-            eventHandlers={{
-              click: () => handleMarkerClick(spot.latitude, spot.longitude, spot.name),
-            }}
+            key={place.id} 
+            position={[place.latitude, place.longitude]} // [Широта, Долгота]
           >
             <Popup>
-              <div style={{ minWidth: '200px' }}>
-                <h3 style={{ margin: '0 0 8px 0', color: '#2c3e50' }}>{spot.name}</h3>
-                {spot.category && (
-                  <span style={{ 
-                    display: 'inline-block',
-                    background: '#3498db', 
-                    color: 'white', 
-                    padding: '2px 8px', 
-                    borderRadius: '4px',
-                    fontSize: '12px',
-                    marginBottom: '8px'
-                  }}>
-                    {spot.category}
-                  </span>
-                )}
-                {spot.description && (
-                  <p style={{ margin: '8px 0 0 0', color: '#7f8c8d', fontSize: '14px' }}>
-                    {spot.description.substring(0, 100)}...
-                  </p>
-                )}
-              </div>
+              <b>{place.name}</b><br />
+              <span style={{ 
+                background: '#e0e7ff', 
+                padding: '2px 6px', 
+                borderRadius: '4px', 
+                fontSize: '12px' 
+              }}>
+                {place.category}
+              </span>
+              <p style={{ marginTop: '5px', fontSize: '14px' }}>
+                {place.description}
+              </p>
             </Popup>
           </Marker>
         ))}
       </MapContainer>
-    </>
+    </div>
   )
 }
 
