@@ -1,104 +1,139 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
 
-function Sidebar({ onAttractionSelect, selectedId }) {
+function Sidebar({ onSelect, selectedId }) {
   const [attractions, setAttractions] = useState([])
-  const [filter, setFilter] = useState('all')
+  const [filtered, setFiltered] = useState([])
+  const [search, setSearch] = useState('')
+  const [category, setCategory] = useState('all')
   const [loading, setLoading] = useState(true)
-  
+
   useEffect(() => {
-    fetchAttractions()
-  }, [])
-  
-  async function fetchAttractions() {
-    try {
-      setLoading(true)
+    async function fetchData() {
       const { data, error } = await supabase
         .from('attractions')
         .select('*')
-        .order('name')
       
-      if (error) throw error
-      setAttractions(data || [])
-    } catch (error) {
-      console.error('Ошибка:', error)
-    } finally {
+      if (error) {
+        console.error('Ошибка загрузки:', error)
+      } else {
+        // Сортируем: сначала те, у которых есть фото
+        const sortedData = (data || []).sort((a, b) => {
+          return (b.image_url ? 1 : 0) - (a.image_url ? 1 : 0)
+        })
+        setAttractions(sortedData)
+        setFiltered(sortedData)
+      }
       setLoading(false)
     }
-  }
-  
-  // Получаем уникальные категории для фильтра
-  const categories = ['all', ...new Set(attractions.map(a => a.category).filter(Boolean))]
-  
-  // Фильтруем достопримечательности
-  const filteredAttractions = filter === 'all' 
-    ? attractions 
-    : attractions.filter(a => a.category === filter)
-  
-  const handleClick = (spot) => {
-    if (onAttractionSelect) {
-      onAttractionSelect(spot)
+    fetchData()
+  }, [])
+
+  useEffect(() => {
+    let result = attractions
+
+    if (search) {
+      result = result.filter(a => 
+        (a.columm_name || '').toLowerCase().includes(search.toLowerCase())
+      )
     }
+
+    if (category !== 'all') {
+      result = result.filter(a => a.category === category)
+    }
+
+    setFiltered(result)
+  }, [search, category, attractions])
+
+  const categories = ['all', ...new Set(attractions.map(a => a.category).filter(Boolean))]
+
+  const handleClick = (place) => {
+    if (onSelect) onSelect(place)
   }
-  
+
+  // Дефолтная картинка-заглушка
+  const defaultImage = "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?w=400&h=300&fit=crop"
+
   return (
     <div className="sidebar">
-      <div style={{ marginBottom: '1rem' }}>
-        <h2 style={{ marginBottom: '1rem', color: '#2c3e50' }}> Достопримечательности</h2>
-        
-        {/* Фильтр по категориям */}
-        <select 
-          value={filter} 
-          onChange={(e) => setFilter(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '0.5rem',
-            borderRadius: '4px',
-            border: '1px solid #ddd',
-            marginBottom: '1rem'
-          }}
+      <div className="sidebar-header">
+        <h2>🇧🇾 BelarusGuide</h2>
+        <p className="subtitle">Откройте для себя Беларусь</p>
+      </div>
+
+      <div className="controls">
+        <input
+          type="text"
+          placeholder="🔍 Поиск места..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="search-input"
+        />
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          className="filter-select"
         >
           <option value="all">Все категории</option>
           {categories.filter(c => c !== 'all').map(cat => (
             <option key={cat} value={cat}>{cat}</option>
           ))}
         </select>
-        
-        <div style={{ color: '#7f8c8d', fontSize: '14px', marginBottom: '1rem' }}>
-          Найдено: {filteredAttractions.length}
-        </div>
       </div>
-      
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '2rem', color: '#7f8c8d' }}>
-          Загрузка...
-        </div>
-      ) : filteredAttractions.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '2rem', color: '#7f8c8d' }}>
-          Ничего не найдено
-        </div>
-      ) : (
-        <div>
-          {filteredAttractions.map((spot) => (
-            <div 
-              key={spot.id}
-              className={`attraction-card ${selectedId === spot.id ? 'selected' : ''}`}
-              onClick={() => handleClick(spot)}
-              style={{
-                borderLeft: selectedId === spot.id ? '4px solid #3498db' : '4px solid transparent'
-              }}
+
+      <div className="stats">
+        Найдено: <strong>{filtered.length}</strong> мест
+      </div>
+
+      <div className="attractions-list">
+        {loading ? (
+          <div className="loading">
+            <div className="spinner"></div>
+            Загрузка...
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="empty">
+            <span style={{fontSize: '2rem'}}>🔍</span>
+            <p>Ничего не найдено</p>
+          </div>
+        ) : (
+          filtered.map((place) => (
+            <div
+              key={place.id}
+              className={`card ${selectedId === place.id ? 'card-active' : ''}`}
+              onClick={() => handleClick(place)}
             >
-              <h3>{spot.name}</h3>
-              {spot.category && (
-                <span className="category">{spot.category}</span>
-              )}
-              {spot.description && (
-                <p>{spot.description.substring(0, 80)}...</p>
-              )}
+              <div className="card-image-wrapper">
+                <img 
+                  src={place.image_url || defaultImage} 
+                  alt={place.columm_name}
+                  className="card-image"
+                  onError={(e) => {
+                    e.target.src = defaultImage
+                  }}
+                />
+                {place.category && (
+                  <span className="card-badge">{place.category}</span>
+                )}
+              </div>
+              <div className="card-content">
+                <h3 className="card-title">{place.columm_name}</h3>
+                {place.description && (
+                  <p className="card-desc">
+                    {place.description.length > 80 
+                      ? place.description.substring(0, 80) + '...' 
+                      : place.description}
+                  </p>
+                )}
+                <div className="card-footer">
+                  <span className="card-location">📍 Беларусь</span>
+                  <span className="card-arrow">→</span>
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
-      )}
+          ))
+        )}
+      </div>
     </div>
   )
 }
