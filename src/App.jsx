@@ -1,57 +1,41 @@
-import { useState, useEffect } from 'react'
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
-import 'leaflet/dist/leaflet.css'
-import { supabase } from './lib/supabaseClient'
-
-// Фикс для иконок Leaflet в React (важно!)
-import L from 'leaflet'
-import icon from 'leaflet/dist/images/marker-icon.png'
-import iconShadow from 'leaflet/dist/images/marker-shadow.png'
-
-let DefaultIcon = L.icon({
-    iconUrl: icon,
-    shadowUrl: iconShadow,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41]
-})
-L.Marker.prototype.options.icon = DefaultIcon
+import { useState } from 'react'
+import Map from './components/Map'
+import Sidebar from './components/Sidebar'
+import './index.css'
 
 function App() {
-  const [attractions, setAttractions] = useState([])
-
-  // Загрузка данных из Supabase при старте
-  useEffect(() => {
-    fetchAttractions()
-  }, [])
-
-  async function fetchAttractions() {
-    const { data, error } = await supabase
-      .from('attractions')
-      .select('*')
-    
-    if (error) console.log('Ошибка:', error)
-    else setAttractions(data)
+  const [selectedAttraction, setSelectedAttraction] = useState(null)
+  const [mapCenter, setMapCenter] = useState(null)
+  
+  // Обработчик выбора из списка
+  const handleAttractionSelect = (spot) => {
+    setSelectedAttraction(spot.id)
+    setMapCenter([spot.latitude, spot.longitude])
   }
-
+  
+  // Обработчик клика на маркер
+  const handleMarkerClick = (lat, lng, name) => {
+    setMapCenter([lat, lng])
+    // Можно добавить поиск по имени в sidebar
+  }
+  
   return (
-    <div style={{ width: '100%', height: '100vh' }}>
-      <MapContainer center={[53.9, 27.56]} zoom={7} style={{ height: '100%', width: '100%' }}>
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; OpenStreetMap contributors'
-        />
-        
-        {/* Отрисовка маркеров из базы данных */}
-        {attractions.map((spot) => (
-          <Marker key={spot.id} position={[spot.latitude, spot.longitude]}>
-            <Popup>
-              <b>{spot.name}</b><br />
-              {spot.category}<br />
-              <i>{spot.description}</i>
-            </Popup>
-          </Marker>
-        ))}
-      </MapContainer>
+    <div>
+      <header className="header">
+        <h1>🇾 BelarusGuide</h1>
+        <div style={{ color: '#7f8c8d' }}>
+          Интерактивная карта достопримечательностей
+        </div>
+      </header>
+      
+      <Sidebar 
+        onAttractionSelect={handleAttractionSelect}
+        selectedId={selectedAttraction}
+      />
+      
+      <div className="map-container">
+        <Map onMarkerClick={handleMarkerClick} />
+      </div>
     </div>
   )
 }
