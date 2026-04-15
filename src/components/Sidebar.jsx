@@ -1,3 +1,4 @@
+import AdBanner from './AdBanner'
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
 
@@ -85,6 +86,9 @@ function Sidebar({ onSelect, selectedId }) {
         Найдено: <strong>{filtered.length}</strong> мест
       </div>
 
+      {/* Рекламный баннер */}
+      <AdBanner />
+      
       <div className="attractions-list">
         {loading ? (
           <div className="loading">
